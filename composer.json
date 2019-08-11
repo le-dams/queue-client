@@ -1,0 +1,33 @@
+{
+  "name": "le-dams/queue-client",
+  "description": "Queue client for le-dams/queue-server",
+  "type": "library",
+  "keywords": [
+    "queue",
+    "client"
+  ],
+  "authors": [{
+    "name":     "Damien Bourcy",
+    "email":    "info@damien-bourcy.com",
+    "homepage": "http://www.damien-bourcy.com/"
+  }],
+  "license": "BSD-3-Clause",
+  "require": {
+    "php":            ">=7.1",
+    "guzzlehttp/guzzle" : "^6.2",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^5.7 || ^6.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "QueueClient\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "QueueClientTest\\":  "tests/QueueClientTest/"
+    }
+  }
+}

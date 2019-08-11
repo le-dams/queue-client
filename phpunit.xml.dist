@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<phpunit
+        bootstrap="./tests/bootstrap.php"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        stopOnFailure="false"
+        processIsolation="false"
+        backupGlobals="false"
+        syntaxCheck="true"
+        beStrictAboutTestsThatDoNotTestAnything="true"
+        beStrictAboutOutputDuringTests="true"
+        beStrictAboutTestSize="true"
+        beStrictAboutCoversAnnotation="true"
+>
+    <testsuite name="Queue Test-Suite">
+        <directory>./tests</directory>
+    </testsuite>
+    <filter>
+        <whitelist addUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">./src</directory>
+        </whitelist>
+    </filter>
+    <php>
+        <env name="QUEUE_BASE_URI" value="http://queue.server/"/>
+        <env name="QUEUE_SECRET_KEY" value="123456"/>
+        <env name="GOOGLE_CLIENT_SECRET" value=""/>
+        <ini name="zend.assertions" value="1"/>
+        <ini name="assert.exception" value="1"/>
+    </php>
+</phpunit>
