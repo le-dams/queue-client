@@ -43,11 +43,11 @@ class Client
      * @return JobResponse
      * @throws QueueServerException
      */
-    public function create(JobRequest $jobRequest): JobResponse
+    public function createJob(JobRequest $jobRequest): JobResponse
     {
         try {
             $request = $this->server->request('POST','/job', [
-                'body' => \json_encode($jobRequest->toArray()),
+                'body' => \json_encode($jobRequest->serialize()),
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
@@ -73,6 +73,44 @@ class Client
     }
 
     /**
+     * @param JobRequest[] $jobRequests
+     * @return JobResponse[]
+     * @throws QueueServerException
+     */
+    public function createJobs(array $jobRequests): array
+    {
+        try {
+            $data = [];
+            foreach ($jobRequests as $jobRequest) {
+                $data[] = $jobRequest->serialize();
+            }
+            $request = $this->server->request('POST','/jobs', [
+                'body' => \json_encode($data),
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Correlation-Id' => $this->correlationId,
+                    'Authorization' => 'Bearer ' . $this->secretKey,
+                ]
+            ]);
+
+            $contentJson = $request->getBody()->getContents();
+            $responses = \json_decode($contentJson, JSON_OBJECT_AS_ARRAY);
+
+            $jobResponses = [];
+            foreach ($responses as $response) {
+                $jobResponse = new JobResponse();
+                $jobResponse->unserialize($response);
+
+                $jobResponses[] = $jobResponse;
+            }
+
+            return $jobResponses;
+        } catch (\GuzzleHttp\Exception\GuzzleException | \Exception $e) {
+            throw new QueueServerException('Queue server return an error', -1, $e);
+        }
+    }
+
+    /**
      * @param int $idJob
      * @return bool
      * @throws QueueServerException
@@ -82,7 +120,7 @@ class Client
      * @return bool
      * @throws QueueServerException
      */
-    public function delete(int $idJob): bool
+    public function deleteJob(int $idJob): bool
     {
         try {
             $request = $this->server->request('DELETE','/job/'.$idJob, [

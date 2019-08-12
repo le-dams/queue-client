@@ -6,7 +6,7 @@ use QueueClient\Enum\Method;
 use QueueClient\Enum\Priority;
 use QueueClient\Enum\Queue;
 
-class JobRequest
+class JobRequest implements \Serializable
 {
     /**
      * @var string|null
@@ -42,6 +42,11 @@ class JobRequest
      * @var \DateTime|null
      */
     private $date;
+
+    /**
+     * @var string|null
+     */
+    private $externalId;
 
     /**
      * @return string|null
@@ -156,9 +161,25 @@ class JobRequest
     }
 
     /**
+     * @return string|null
+     */
+    public function getExternalId(): ?string
+    {
+        return $this->externalId;
+    }
+
+    /**
+     * @param string|null $externalId
+     */
+    public function setExternalId(?string $externalId): void
+    {
+        $this->externalId = $externalId;
+    }
+
+    /**
      * @return array
      */
-    public function toArray(): array
+    public function serialize(): array
     {
         return [
             'uri' => $this->uri,
@@ -168,6 +189,46 @@ class JobRequest
             'priority' => $this->priority,
             'date' => $this->date ? $this->date->format('Y-m-d H:i:s') : date('Y-m-d H:i:s'),
             'params' => $this->params,
+            'externalId' => $this->externalId,
         ];
+    }
+
+    /**
+     * @param array|string $serialized
+     * @return array|void
+     * @throws \Exception
+     */
+    public function unserialize($serialized)
+    {
+        if (is_string($serialized)) {
+            $data = \json_decode($serialized);
+        } else {
+            $data = $serialized;
+        }
+
+        if (isset($data['uri'])) {
+            $this->uri = $data['uri'];
+        }
+        if (isset($data['method'])) {
+            $this->method = $data['uri'];
+        }
+        if (isset($data['name'])) {
+            $this->name = $data['uri'];
+        }
+        if (isset($data['queue'])) {
+            $this->queue = $data['queue'];
+        }
+        if (isset($data['priority'])) {
+            $this->priority = $data['priority'];
+        }
+        if (isset($data['params'])) {
+            $this->params = $data['params'];
+        }
+        if (isset($data['date'])) {
+            $this->date = new \DateTime($data['date']);
+        }
+        if (isset($data['externalId'])) {
+            $this->externalId = $data['externalId'];
+        }
     }
 }
