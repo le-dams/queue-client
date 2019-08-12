@@ -210,10 +210,10 @@ class JobRequest implements \Serializable
             $this->uri = $data['uri'];
         }
         if (isset($data['method'])) {
-            $this->method = $data['uri'];
+            $this->method = $data['method'];
         }
         if (isset($data['name'])) {
-            $this->name = $data['uri'];
+            $this->name = $data['name'];
         }
         if (isset($data['queue'])) {
             $this->queue = $data['queue'];
