@@ -46,7 +46,7 @@ class Client
     public function createJob(JobRequest $jobRequest): JobResponse
     {
         try {
-            $request = $this->server->request('POST','/queue/server/public/index.php/job', [
+            $request = $this->server->request('POST','/job', [
                 'body' => \json_encode($jobRequest->serialize()),
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -79,7 +79,7 @@ class Client
             foreach ($jobRequests as $jobRequest) {
                 $data[] = $jobRequest->serialize();
             }
-            $request = $this->server->request('POST','/queue/server/public/index.php/jobs', [
+            $request = $this->server->request('POST','/jobs', [
                 'body' => \json_encode($data),
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -110,15 +110,10 @@ class Client
      * @return bool
      * @throws QueueServerException
      */
-    /**
-     * @param int $idJob
-     * @return bool
-     * @throws QueueServerException
-     */
     public function deleteJob(int $idJob): bool
     {
         try {
-            $request = $this->server->request('DELETE','/queue/server/public/index.php/job/'.$idJob, [
+            $request = $this->server->request('DELETE','/job/'.$idJob, [
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
