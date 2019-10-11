@@ -30,6 +30,11 @@ class JobResponse implements \Serializable
     private $message;
 
     /**
+     * @var string|null
+     */
+    private $transactionId;
+
+    /**
      * @return string|null
      */
     public function getProvider(): ?string
@@ -110,6 +115,22 @@ class JobResponse implements \Serializable
     }
 
     /**
+     * @return string|null
+     */
+    public function getTransactionId(): ?string
+    {
+        return $this->transactionId;
+    }
+
+    /**
+     * @param string|null $transactionId
+     */
+    public function setTransactionId(?string $transactionId): void
+    {
+        $this->transactionId = $transactionId;
+    }
+
+    /**
      * @return array
      */
     public function serialize(): array
@@ -119,7 +140,8 @@ class JobResponse implements \Serializable
             'provider' => $this->provider,
             'success' => $this->success,
             'message' => $this->message,
-            'externalId' => $this->externalId
+            'externalId' => $this->externalId,
+            'transactionId' => $this->transactionId
         ];
     }
 
@@ -150,6 +172,9 @@ class JobResponse implements \Serializable
         }
         if (isset($data['externalId'])) {
             $this->externalId = $data['externalId'];
+        }
+        if (isset($data['transactionId'])) {
+            $this->transactionId = $data['transactionId'];
         }
     }
 }
