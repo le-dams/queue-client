@@ -39,6 +39,11 @@ class JobRequest implements \Serializable
     private $params = [];
 
     /**
+     * @var array|null
+     */
+    private $headers = [];
+
+    /**
      * @var \DateTime|null
      */
     private $date;
@@ -145,6 +150,22 @@ class JobRequest implements \Serializable
     }
 
     /**
+     * @return array|null
+     */
+    public function getHeaders(): ?array
+    {
+        return $this->headers;
+    }
+
+    /**
+     * @param array|null $headers
+     */
+    public function setHeaders(?array $headers): void
+    {
+        $this->headers = $headers;
+    }
+
+    /**
      * @return \DateTime|null
      */
     public function getDate(): ?\DateTime
@@ -189,6 +210,7 @@ class JobRequest implements \Serializable
             'priority' => $this->priority,
             'date' => $this->date ? $this->date->format('Y-m-d H:i:s') : date('Y-m-d H:i:s'),
             'params' => $this->params,
+            'headers' => $this->headers,
             'externalId' => $this->externalId,
         ];
     }
@@ -223,6 +245,9 @@ class JobRequest implements \Serializable
         }
         if (isset($data['params'])) {
             $this->params = $data['params'];
+        }
+        if (isset($data['headers'])) {
+            $this->headers = $data['headers'];
         }
         if (isset($data['date'])) {
             $this->date = new \DateTime($data['date']);
