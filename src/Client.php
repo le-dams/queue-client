@@ -2,6 +2,8 @@
 
 namespace QueueClient;
 
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 use QueueClient\Transactions\JobResponse;
 use QueueClient\Transactions\JobRequest;
 use QueueClient\Exception\QueueServerException;
@@ -36,13 +38,20 @@ class Client
     private $transactionId;
 
     /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
      * Client constructor.
      * @param string $baseUri
      * @param string $secretKey
      * @param string|null $correlationId
+     * @param LoggerInterface|null $logger
      */
-    public function __construct(string $baseUri, string $secretKey, string $correlationId  = null)
+    public function __construct(string $baseUri, string $secretKey, string $correlationId  = null, LoggerInterface $logger = null)
     {
+        $this->logger = $logger ? $logger : new NullLogger();
         $this->secretKey = $secretKey;
         $this->correlationId = $correlationId;
         $this->server = new \GuzzleHttp\Client([
@@ -179,10 +188,40 @@ class Client
 
             return $jobResponse;
         } catch (GuzzleException $e) {
+            $this->logger->error($e);
             if ($this->autoStartTransaction === true) {
                 $this->rollbackTransaction();
             }
             throw new QueueServerException('Queue server return an error: '.$e->getMessage(), -1, $e);
+        }
+    }
+
+    public function ping(): bool
+    {
+        try {
+            $request = $this->server->request('GET','/', [
+                'headers' => [
+                    'Correlation-Id' => $this->correlationId,
+                    'Secret-Key' => $this->secretKey,
+                ]
+            ]);
+
+            if ($request->getStatusCode() < 200 || $request->getStatusCode() > 300) {
+                $this->logger->warning('Invalid server Status Code, ['.$request->getStatusCode().']');
+                return false;
+            }
+
+            $content = $request->getBody()->getContents();
+            $json = \json_decode($content, true);
+            if (null === $json) {
+                $this->logger->warning('Not adequate response from Server');
+                return false;
+            }
+
+            return isset($json['success']) && $json['success'] === true;
+        } catch (GuzzleException $e) {
+            $this->logger->error($e);
+            return false;
         }
     }
 
@@ -232,6 +271,7 @@ class Client
 
             return $jobResponses;
         } catch (GuzzleException $e) {
+            $this->logger->error($e);
             if ($this->autoStartTransaction === true) {
                 $this->rollbackTransaction();
             }
@@ -256,6 +296,7 @@ class Client
 
             return $request->getStatusCode() === 200;
         } catch (GuzzleException $e) {
+            $this->logger->error($e);
             throw new QueueServerException('Queue server return an error', -1, $e);
         }
     }

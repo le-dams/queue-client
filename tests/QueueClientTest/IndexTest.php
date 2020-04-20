@@ -23,6 +23,14 @@ class IndexTest extends TestCase
     }
 
     /**
+     * @throws \Exception
+     */
+    public function testPing()
+    {
+        $this->assertTrue($this->client->ping());
+    }
+
+    /**
      * @return JobResponse
      * @throws \Exception
      */
