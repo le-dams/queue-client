@@ -55,7 +55,7 @@ class Client
         $this->secretKey = $secretKey;
         $this->correlationId = $correlationId;
         $this->server = new \GuzzleHttp\Client([
-            'base_uri' => $baseUri,
+            'base_uri' => $baseUri.(substr($baseUri, -1)!=='/' ? '/' : null),
         ]);
     }
 
@@ -74,7 +74,7 @@ class Client
      */
     public function startTransaction(): string
     {
-        $request = $this->server->request('POST','/transaction', [
+        $request = $this->server->request('POST','transaction', [
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Correlation-Id' => $this->correlationId,
@@ -101,7 +101,7 @@ class Client
     public function rollbackTransaction(): void
     {
         if ($this->transactionId) {
-            $this->server->request('DELETE', '/transaction/' . $this->transactionId, [
+            $this->server->request('DELETE', 'transaction/' . $this->transactionId, [
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
@@ -121,7 +121,7 @@ class Client
      */
     public function getTransactionInfo(string $transactionId): array
     {
-        $request = $this->server->request('GET','/transaction/'.$transactionId, [
+        $request = $this->server->request('GET','transaction/'.$transactionId, [
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Correlation-Id' => $this->correlationId,
@@ -140,7 +140,7 @@ class Client
     public function closeTransaction(): void
     {
         if ($this->transactionId) {
-            $this->server->request('PUT', '/transaction/' . $this->transactionId, [
+            $this->server->request('PUT', 'transaction/' . $this->transactionId, [
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
@@ -166,7 +166,7 @@ class Client
                 $this->startTransaction();
             }
 
-            $request = $this->server->request('POST','/job', [
+            $request = $this->server->request('POST','job', [
                 'body' => \json_encode($jobRequest->serialize()),
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -199,7 +199,7 @@ class Client
     public function ping(): bool
     {
         try {
-            $request = $this->server->request('GET','/', [
+            $request = $this->server->request('GET','', [
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
@@ -244,7 +244,7 @@ class Client
                 $this->startTransaction();
             }
 
-            $request = $this->server->request('POST','/jobs', [
+            $request = $this->server->request('POST','jobs', [
                 'body' => \json_encode($data),
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -287,7 +287,7 @@ class Client
     public function deleteJob(int $idJob): bool
     {
         try {
-            $request = $this->server->request('DELETE','/job/'.$idJob, [
+            $request = $this->server->request('DELETE','job/'.$idJob, [
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
