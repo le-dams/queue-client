@@ -208,7 +208,7 @@ class JobRequest implements \Serializable
             'name' => $this->name,
             'queue' => $this->queue,
             'priority' => $this->priority,
-            'date' => $this->date ? $this->date->format('Y-m-d H:i:s') : date('Y-m-d H:i:s'),
+            'date' => $this->date ? $this->date->format(DATE_RFC3339) : null,
             'params' => $this->params,
             'headers' => $this->headers,
             'externalId' => $this->externalId,
