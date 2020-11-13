@@ -43,6 +43,11 @@ class Client
     private $logger;
 
     /**
+     * @var int
+     */
+    private $connectionTimeout = 0;
+
+    /**
      * Client constructor.
      * @param string $baseUri
      * @param string $secretKey
@@ -68,6 +73,17 @@ class Client
     }
 
     /**
+     * @param int $connectionTimeout
+     */
+    public function setConnectionTimeout(int $connectionTimeout): void
+    {
+        if ($connectionTimeout < 0) {
+            throw new \InvalidArgumentException('Connection timeout must be bigger than zero');
+        }
+        $this->connectionTimeout = $connectionTimeout;
+    }
+
+    /**
      * @return string
      * @throws QueueServerException
      * @throws GuzzleException
@@ -75,6 +91,7 @@ class Client
     public function startTransaction(): string
     {
         $request = $this->server->request('POST','transaction', [
+            'connect_timeout' => $this->connectionTimeout,
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Correlation-Id' => $this->correlationId,
@@ -102,6 +119,7 @@ class Client
     {
         if ($this->transactionId) {
             $this->server->request('DELETE', 'transaction/' . $this->transactionId, [
+                'connect_timeout' => $this->connectionTimeout,
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
@@ -122,6 +140,7 @@ class Client
     public function getTransactionInfo(string $transactionId): array
     {
         $request = $this->server->request('GET','transaction/'.$transactionId, [
+            'connect_timeout' => $this->connectionTimeout,
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Correlation-Id' => $this->correlationId,
@@ -141,6 +160,7 @@ class Client
     {
         if ($this->transactionId) {
             $this->server->request('PUT', 'transaction/' . $this->transactionId, [
+                'connect_timeout' => $this->connectionTimeout,
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
@@ -167,6 +187,7 @@ class Client
             }
 
             $request = $this->server->request('POST','job', [
+                'connect_timeout' => $this->connectionTimeout,
                 'body' => \json_encode($jobRequest->serialize()),
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -200,6 +221,7 @@ class Client
     {
         try {
             $request = $this->server->request('GET','', [
+                'connect_timeout' => $this->connectionTimeout,
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
@@ -245,6 +267,7 @@ class Client
             }
 
             $request = $this->server->request('POST','jobs', [
+                'connect_timeout' => $this->connectionTimeout,
                 'body' => \json_encode($data),
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -288,6 +311,7 @@ class Client
     {
         try {
             $request = $this->server->request('DELETE','job/'.$idJob, [
+                'connect_timeout' => $this->connectionTimeout,
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
