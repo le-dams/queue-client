@@ -324,4 +324,27 @@ class Client
             throw new QueueServerException('Queue server return an error', -1, $e);
         }
     }
+
+    /**
+     * @param int $idJob
+     * @return array|null
+     * @throws QueueServerException
+     */
+    public function getJob(int $idJob): ?array
+    {
+        try {
+            $request = $this->server->request('GET','job/'.$idJob, [
+                'connect_timeout' => $this->connectionTimeout,
+                'headers' => [
+                    'Correlation-Id' => $this->correlationId,
+                    'Secret-Key' => $this->secretKey,
+                ]
+            ]);
+
+            return \json_decode($request->getBody()->getContents(), JSON_OBJECT_AS_ARRAY);
+        } catch (GuzzleException $e) {
+            $this->logger->error($e);
+            throw new QueueServerException('Queue server return an error', -1, $e);
+        }
+    }
 }
