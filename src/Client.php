@@ -33,11 +33,6 @@ class Client
     private $autoStartTransaction = true;
 
     /**
-     * @var string
-     */
-    private $transactionId;
-
-    /**
      * @var LoggerInterface
      */
     private $logger;
@@ -56,7 +51,7 @@ class Client
      */
     public function __construct(string $baseUri, string $secretKey, string $correlationId  = null, LoggerInterface $logger = null)
     {
-        $this->logger = $logger ? $logger : new NullLogger();
+        $this->logger = $logger ?: new NullLogger();
         $this->secretKey = $secretKey;
         $this->correlationId = $correlationId;
         $this->server = new \GuzzleHttp\Client([
@@ -100,35 +95,30 @@ class Client
         ]);
 
         $contentJson = $request->getBody()->getContents();
-        $response = \json_decode($contentJson, JSON_OBJECT_AS_ARRAY);
+        $response = \json_decode($contentJson, true);
 
         if (!isset($response['id']) || !$response['id']) {
             throw new QueueServerException('Invalid transaction');
         }
 
-        $this->transactionId = $response['id'];
-
-        return $this->transactionId;
+        return $response['id'];
     }
 
     /**
+     * @param string $transactionId
      * @return void
      * @throws GuzzleException
      */
-    public function rollbackTransaction(): void
+    public function rollbackTransaction(string $transactionId): void
     {
-        if ($this->transactionId) {
-            $this->server->request('DELETE', 'transaction/' . $this->transactionId, [
-                'connect_timeout' => $this->connectionTimeout,
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Correlation-Id' => $this->correlationId,
-                    'Secret-Key' => $this->secretKey,
-                ]
-            ]);
-
-            $this->transactionId = null;
-        }
+        $this->server->request('DELETE', 'transaction/' . $transactionId, [
+            'connect_timeout' => $this->connectionTimeout,
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Correlation-Id' => $this->correlationId,
+                'Secret-Key' => $this->secretKey,
+            ]
+        ]);
     }
 
     /**
@@ -149,41 +139,68 @@ class Client
         ]);
 
         $contentJson = $request->getBody()->getContents();
-        return \json_decode($contentJson, JSON_OBJECT_AS_ARRAY);
+        return \json_decode($contentJson, true);
     }
 
     /**
-     * @return void
+     * @param string $transactionId
+     * @return JobResponse[]
+     * @throws QueueServerException
      * @throws GuzzleException
      */
-    public function closeTransaction(): void
+    public function getTransactionJobs(string $transactionId): array
     {
-        if ($this->transactionId) {
-            $this->server->request('PUT', 'transaction/' . $this->transactionId, [
-                'connect_timeout' => $this->connectionTimeout,
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Correlation-Id' => $this->correlationId,
-                    'Secret-Key' => $this->secretKey,
-                ]
-            ]);
+        $request = $this->server->request('GET','transaction/'.$transactionId.'/jobs', [
+            'connect_timeout' => $this->connectionTimeout,
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Correlation-Id' => $this->correlationId,
+                'Secret-Key' => $this->secretKey,
+            ]
+        ]);
 
-            $this->transactionId = null;
+        $contentJson = $request->getBody()->getContents();
+        $responses = \json_decode($contentJson, true);
+
+        $jobResponses = [];
+        foreach ($responses as $response) {
+            $jobResponse = new JobResponse();
+            $jobResponse->unserialize($response);
+
+            $jobResponses[] = $jobResponse;
         }
+
+        return $jobResponses;
+    }
+
+    /**
+     * @param string $transactionId
+     * @return void
+     */
+    public function closeTransaction(string $transactionId): void
+    {
+        $this->server->request('PUT', 'transaction/' . $transactionId, [
+            'connect_timeout' => $this->connectionTimeout,
+            'headers' => [
+                'Content-Type' => 'application/json',
+                'Correlation-Id' => $this->correlationId,
+                'Secret-Key' => $this->secretKey,
+            ]
+        ]);
     }
 
     /**
      * @param JobRequest $jobRequest
+     * @param string|null $transactionId
      * @return JobResponse
-     * @throws QueueServerException
      * @throws GuzzleException
-     * @throws Exception
+     * @throws QueueServerException
      */
-    public function createJob(JobRequest $jobRequest): JobResponse
+    public function createJob(JobRequest $jobRequest, ?string $transactionId = null): JobResponse
     {
         try {
-            if ($this->autoStartTransaction === true) {
-                $this->startTransaction();
+            if (null === $transactionId && true === $this->autoStartTransaction) {
+                $transactionId = $this->startTransaction();
             }
 
             $request = $this->server->request('POST','job', [
@@ -193,16 +210,16 @@ class Client
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
-                    'Transaction-Id' => $this->transactionId,
+                    'Transaction-Id' => $transactionId,
                 ]
             ]);
 
-            if ($this->autoStartTransaction === true) {
-                $this->closeTransaction();
+            if (true === $this->autoStartTransaction) {
+                $this->closeTransaction($transactionId);
             }
 
             $contentJson = $request->getBody()->getContents();
-            $response = \json_decode($contentJson, JSON_OBJECT_AS_ARRAY);
+            $response = \json_decode($contentJson, true);
 
             $jobResponse = new JobResponse();
             $jobResponse->unserialize($response);
@@ -210,9 +227,6 @@ class Client
             return $jobResponse;
         } catch (GuzzleException $e) {
             $this->logger->error($e);
-            if ($this->autoStartTransaction === true) {
-                $this->rollbackTransaction();
-            }
             throw new QueueServerException('Queue server return an error: '.$e->getMessage(), -1, $e);
         }
     }
@@ -254,7 +268,7 @@ class Client
      * @throws GuzzleException
      * @throws Exception
      */
-    public function createJobs(array $jobRequests): array
+    public function createJobs(array $jobRequests, ?string $transactionId = null): array
     {
         try {
             $data = [];
@@ -262,8 +276,8 @@ class Client
                 $data[] = $jobRequest->serialize();
             }
 
-            if ($this->autoStartTransaction === true) {
-                $this->startTransaction();
+            if (null === $transactionId && true === $this->autoStartTransaction) {
+                $transactionId = $this->startTransaction();
             }
 
             $request = $this->server->request('POST','jobs', [
@@ -273,16 +287,16 @@ class Client
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
-                    'Transaction-Id' => $this->transactionId,
+                    'Transaction-Id' => $transactionId,
                 ]
             ]);
 
-            if ($this->autoStartTransaction === true) {
-                $this->closeTransaction();
+            if (true === $this->autoStartTransaction) {
+                $this->closeTransaction($transactionId);
             }
 
             $contentJson = $request->getBody()->getContents();
-            $responses = \json_decode($contentJson, JSON_OBJECT_AS_ARRAY);
+            $responses = \json_decode($contentJson, true);
 
             $jobResponses = [];
             foreach ($responses as $response) {
@@ -295,8 +309,8 @@ class Client
             return $jobResponses;
         } catch (GuzzleException $e) {
             $this->logger->error($e);
-            if ($this->autoStartTransaction === true) {
-                $this->rollbackTransaction();
+            if (null !== $transactionId && true === $this->autoStartTransaction) {
+                $this->rollbackTransaction($transactionId);
             }
             throw new QueueServerException('Queue server return an error: '.$e->getMessage(), -1, $e);
         }
@@ -341,7 +355,7 @@ class Client
                 ]
             ]);
 
-            return \json_decode($request->getBody()->getContents(), JSON_OBJECT_AS_ARRAY);
+            return \json_decode($request->getBody()->getContents(), true);
         } catch (GuzzleException $e) {
             $this->logger->error($e);
             throw new QueueServerException('Queue server return an error', -1, $e);
