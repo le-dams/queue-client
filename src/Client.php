@@ -173,6 +173,26 @@ class Client
     }
 
     /**
+     * @return void
+     * @throws GuzzleException
+     */
+    public function deleteTransaction(): void
+    {
+        if ($this->transactionId) {
+            $this->server->request('DELETE', 'transaction/' . $this->transactionId, [
+                'connect_timeout' => $this->connectionTimeout,
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Correlation-Id' => $this->correlationId,
+                    'Secret-Key' => $this->secretKey,
+                ]
+            ]);
+
+            $this->transactionId = null;
+        }
+    }
+
+    /**
      * @param JobRequest $jobRequest
      * @return JobResponse
      * @throws QueueServerException
