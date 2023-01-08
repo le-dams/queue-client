@@ -97,7 +97,6 @@ class Client
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Correlation-Id' => $this->correlationId,
-                'Secret-Key' => $this->secretKey,
                 'Authorization' => 'Bearer '.$this->secretKey,
             ]
         ]);
@@ -126,7 +125,6 @@ class Client
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
-                    'Secret-Key' => $this->secretKey,
                     'Authorization' => 'Bearer '.$this->secretKey,
                 ]
             ]);
@@ -148,7 +146,6 @@ class Client
             'headers' => [
                 'Content-Type' => 'application/json',
                 'Correlation-Id' => $this->correlationId,
-                'Secret-Key' => $this->secretKey,
                 'Authorization' => 'Bearer '.$this->secretKey,
             ]
         ]);
@@ -169,7 +166,6 @@ class Client
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
-                    'Secret-Key' => $this->secretKey,
                     'Authorization' => 'Bearer '.$this->secretKey,
                 ]
             ]);
@@ -198,7 +194,6 @@ class Client
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
-                    'Secret-Key' => $this->secretKey,
                     'Transaction-Id' => $this->transactionId,
                     'Authorization' => 'Bearer '.$this->secretKey,
                 ]
@@ -301,7 +296,6 @@ class Client
                 'headers' => [
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
-                    'Secret-Key' => $this->secretKey,
                     'Authorization' => 'Bearer '.$this->secretKey,
                     'Transaction-Id' => $this->transactionId,
                 ]
@@ -344,7 +338,6 @@ class Client
                 'connect_timeout' => $this->connectionTimeout,
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
-                    'Secret-Key' => $this->secretKey,
                     'Authorization' => 'Bearer '.$this->secretKey,
                 ]
             ]);
@@ -368,7 +361,6 @@ class Client
                 'connect_timeout' => $this->connectionTimeout,
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
-                    'Secret-Key' => $this->secretKey,
                     'Authorization' => 'Bearer '.$this->secretKey,
                 ]
             ]);
