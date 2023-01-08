@@ -2,6 +2,8 @@
 
 namespace QueueClient;
 
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use QueueClient\Transactions\JobResponse;
@@ -96,6 +98,7 @@ class Client
                 'Content-Type' => 'application/json',
                 'Correlation-Id' => $this->correlationId,
                 'Secret-Key' => $this->secretKey,
+                'Authorization' => 'Bearer '.$this->secretKey,
             ]
         ]);
 
@@ -124,6 +127,7 @@ class Client
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
+                    'Authorization' => 'Bearer '.$this->secretKey,
                 ]
             ]);
 
@@ -145,6 +149,7 @@ class Client
                 'Content-Type' => 'application/json',
                 'Correlation-Id' => $this->correlationId,
                 'Secret-Key' => $this->secretKey,
+                'Authorization' => 'Bearer '.$this->secretKey,
             ]
         ]);
 
@@ -165,6 +170,7 @@ class Client
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
+                    'Authorization' => 'Bearer '.$this->secretKey,
                 ]
             ]);
 
@@ -194,6 +200,7 @@ class Client
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
                     'Transaction-Id' => $this->transactionId,
+                    'Authorization' => 'Bearer '.$this->secretKey,
                 ]
             ]);
 
@@ -220,29 +227,51 @@ class Client
     public function ping(): bool
     {
         try {
-            $request = $this->server->request('GET','', [
+            $signature = uniqid();
+            $response = $this->server->request('GET', 'ping', [
                 'connect_timeout' => $this->connectionTimeout,
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
-                    'Secret-Key' => $this->secretKey,
+                    'Authorization' => 'Bearer ' . $this->secretKey,
+                    'X-Ping-Signature' => $signature
                 ]
             ]);
 
-            if ($request->getStatusCode() < 200 || $request->getStatusCode() > 300) {
-                $this->logger->warning('Invalid server Status Code, ['.$request->getStatusCode().']');
+            if ($response->getStatusCode() < 200 || $response->getStatusCode() > 300) {
+                $this->logger->warning('Invalid server Status Code, [' . $response->getStatusCode() . ']');
                 return false;
             }
 
-            $content = $request->getBody()->getContents();
+            $content = $response->getBody()->getContents();
             $json = \json_decode($content, true);
             if (null === $json) {
                 $this->logger->warning('Not adequate response from Server');
                 return false;
             }
 
-            return isset($json['success']) && $json['success'] === true;
-        } catch (GuzzleException $e) {
-            $this->logger->error($e);
+            if (false === isset($json['success'])) {
+                $this->logger->warning('Field [success] is missing');
+                return false;
+            } else if ($json['success'] !== true) {
+                $this->logger->warning('Field [success] is wrong');
+                return false;
+            } else if (false === isset($json['signature'])) {
+                $this->logger->warning('Field [signature] is missing');
+                return false;
+            } else if ($json['signature'] !== $signature) {
+                $this->logger->warning('Field [signature] is wrong');
+                return false;
+            }
+
+            return true;
+        } catch (ClientException $exception) {
+            $this->logger->warning($exception);
+            return false;
+        } catch (ServerException $exception) {
+            $this->logger->error($exception);
+            return false;
+        } catch (\Exception $e) {
+            $this->logger->alert($e);
             return false;
         }
     }
@@ -273,6 +302,7 @@ class Client
                     'Content-Type' => 'application/json',
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
+                    'Authorization' => 'Bearer '.$this->secretKey,
                     'Transaction-Id' => $this->transactionId,
                 ]
             ]);
@@ -315,6 +345,7 @@ class Client
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
+                    'Authorization' => 'Bearer '.$this->secretKey,
                 ]
             ]);
 
@@ -338,6 +369,7 @@ class Client
                 'headers' => [
                     'Correlation-Id' => $this->correlationId,
                     'Secret-Key' => $this->secretKey,
+                    'Authorization' => 'Bearer '.$this->secretKey,
                 ]
             ]);
 
