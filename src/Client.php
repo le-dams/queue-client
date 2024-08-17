@@ -179,9 +179,9 @@ class Client
      * @param string $transactionId
      * @return void
      */
-    public function closeTransaction(string $transactionId): void
+    public function commitTransaction(string $transactionId): void
     {
-        $this->server->request('PUT', 'transaction/' . $transactionId, [
+        $this->server->request('PUT', 'transaction/' . $transactionId.'/commit', [
             'connect_timeout' => $this->connectionTimeout,
             'headers' => [
                 'Content-Type' => 'application/json',
@@ -217,7 +217,7 @@ class Client
             ]);
 
             if (true === $this->autoStartTransaction) {
-                $this->closeTransaction($transactionId);
+                $this->commitTransaction($transactionId);
             }
 
             $contentJson = $request->getBody()->getContents();
@@ -316,7 +316,7 @@ class Client
             ]);
 
             if (true === $this->autoStartTransaction) {
-                $this->closeTransaction($transactionId);
+                $this->commitTransaction($transactionId);
             }
 
             $contentJson = $request->getBody()->getContents();
