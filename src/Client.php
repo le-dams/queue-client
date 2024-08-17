@@ -158,10 +158,10 @@ class Client
      * @return void
      * @throws GuzzleException
      */
-    public function closeTransaction(): void
+    public function commitTransaction(): void
     {
         if ($this->transactionId) {
-            $this->server->request('PUT', 'transaction/' . $this->transactionId, [
+            $this->server->request('PUT', 'transaction/' . $this->transactionId.'/commit', [
                 'connect_timeout' => $this->connectionTimeout,
                 'headers' => [
                     'Content-Type' => 'application/json',
@@ -200,7 +200,7 @@ class Client
             ]);
 
             if ($this->autoStartTransaction === true) {
-                $this->closeTransaction();
+                $this->commitTransaction();
             }
 
             $contentJson = $request->getBody()->getContents();
@@ -302,7 +302,7 @@ class Client
             ]);
 
             if ($this->autoStartTransaction === true) {
-                $this->closeTransaction();
+                $this->commitTransaction();
             }
 
             $contentJson = $request->getBody()->getContents();
