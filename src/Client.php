@@ -11,6 +11,7 @@ use QueueClient\Transactions\JobRequest;
 use QueueClient\Exception\QueueServerException;
 use \GuzzleHttp\Exception\GuzzleException;
 use \Exception;
+use QueueClient\Transactions\JobResponseCollection;
 
 class Client
 {
@@ -146,11 +147,11 @@ class Client
 
     /**
      * @param string $transactionId
-     * @return JobResponse[]
+     * @return JobResponseCollection
      * @throws QueueServerException
      * @throws GuzzleException
      */
-    public function getTransactionJobs(string $transactionId): array
+    public function getTransactionJobs(string $transactionId): JobResponseCollection
     {
         $request = $this->server->request('GET','transaction/'.$transactionId.'/jobs', [
             'connect_timeout' => $this->connectionTimeout,
@@ -172,7 +173,7 @@ class Client
             $jobResponses[] = $jobResponse;
         }
 
-        return $jobResponses;
+        return new JobResponseCollection($jobResponses);
     }
 
     /**
@@ -287,12 +288,12 @@ class Client
 
     /**
      * @param array $jobRequests
-     * @return array
+     * @return JobResponseCollection
      * @throws QueueServerException
      * @throws GuzzleException
      * @throws Exception
      */
-    public function createJobs(array $jobRequests, ?string $transactionId = null): array
+    public function createJobs(array $jobRequests, ?string $transactionId = null): JobResponseCollection
     {
         try {
             $data = [];
@@ -330,7 +331,7 @@ class Client
                 $jobResponses[] = $jobResponse;
             }
 
-            return $jobResponses;
+            return new JobResponseCollection($jobResponses);
         } catch (GuzzleException $e) {
             $this->logger->error($e);
             if (null !== $transactionId && true === $this->autoStartTransaction) {
